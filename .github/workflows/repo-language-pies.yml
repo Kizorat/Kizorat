@@ -1,0 +1,35 @@
+name: Generate Repo Language Pies
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # every night at 02:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests matplotlib
+
+      - name: Generate language and tools pie charts (my commits only)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/generate_my_language_pie.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add profile-summary-card-output/my-language-pie.svg profile-summary-card-output/my-tools-pie.svg
+          git diff --staged --quiet || git commit -m "chore: update language and tools pie charts [skip ci]"
+          git push
